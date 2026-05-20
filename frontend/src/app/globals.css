@@ -419,3 +419,15 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   background: rgba(124,106,247,0.12);
   border-radius: 8px;
 }
+
+@media (max-width: 768px) {
+  .chat-layout { flex-direction: column; }
+  .sidebar { width: 100%%; height: auto; max-height: 200px; border-right: none; border-bottom: 1px solid var(--border); }
+  .user-list { display: flex; flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 8px; gap: 8px; }
+  .user-item { flex-direction: column; min-width: 70px; padding: 8px; border-left: none; border-radius: 12px; text-align: center; }
+  .chat-window { flex: 1; min-height: 0; }
+  .messages-area { padding: 12px; }
+  .input-bar { padding: 10px 12px; }
+  .bubble { max-width: 85%%; }
+  .auth-card { width: 95%%; padding: 28px 20px; }
+}
