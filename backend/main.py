@@ -211,36 +211,69 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 await manager.send_to(user_id, msg_payload)
 
                 # Auto-reply if receiver is NOT online
-                if receiver_id not in manager.active:
+                if receiver_id not in manager.active and content.strip():
                     await asyncio.sleep(1)
-                    replies = [
-                        "Hi! 👋 How are you?",
-                        "Hey there! What's up?",
-                        "Hello! Nice to hear from you 😊",
-                        "Hi! I'll get back to you soon!",
-                        "Hey! Thanks for the message 👍",
-                        "Oh hi! Good to see you here!",
-                        "Hello! How can I help you?",
-                        "Hey, what's going on? 😄",
-                    ]
-                    # pick a reply based on what was sent
-                    msg_lower = content.lower()
-                    if any(w in msg_lower for w in ["hi", "hello", "hey", "sup"]):
-                        auto_reply = random.choice(["Hey! 👋", "Hi there! 😊", "Hello! How are you?", "Hey, what's up?"])
-                    elif any(w in msg_lower for w in ["how are you", "how r u", "how are u"]):
-                        auto_reply = random.choice(["I'm doing great, thanks! 😄", "Pretty good! How about you?", "All good here! 👍"])
-                    elif any(w in msg_lower for w in ["bye", "goodbye", "cya", "see you"]):
-                        auto_reply = random.choice(["Bye! 👋 Take care!", "See you later! 😊", "Goodbye! Have a great day!"])
-                    elif any(w in msg_lower for w in ["thanks", "thank you", "thx"]):
-                        auto_reply = random.choice(["You're welcome! 😊", "No problem at all!", "Happy to help! 👍"])
-                    elif "?" in content:
-                        auto_reply = random.choice(["Good question! Let me think... 🤔", "Hmm, not sure about that!", "That's interesting! 😄"])
-                    else:
-                        auto_reply = random.choice(replies)
-
-                    # get receiver info
                     rec = db.execute("SELECT id, username FROM users WHERE id=?", (receiver_id,)).fetchone()
                     if rec:
+                        m = content.lower().strip()
+
+                        if any(w in m for w in ["hi", "hello", "hey", "hiya", "sup", "wassup", "howdy"]):
+                            auto_reply = random.choice(["Hey! 👋 So good to hear from you!", "Hi there! 😊 How's your day going?", "Hello! Great to see you! 🌟", "Hey hey! What's up? 😄"])
+                        elif any(w in m for w in ["how are you", "how r u", "how are u", "hows it going", "how's it going", "u ok", "you ok"]):
+                            auto_reply = random.choice(["I'm doing really well, thanks for asking! 😊 How about you?", "Pretty great! Just been keeping busy 😄 What about you?", "All good here! 💙 How are you doing?"])
+                        elif any(w in m for w in ["bye", "goodbye", "cya", "see you", "see ya", "later", "gotta go", "ttyl"]):
+                            auto_reply = random.choice(["Bye! 👋 Take care of yourself!", "See you later! 😊 It was great chatting!", "Goodbye! Have an amazing day! 🌟", "Catch you later! 💙"])
+                        elif any(w in m for w in ["thanks", "thank you", "thx", "ty", "appreciate"]):
+                            auto_reply = random.choice(["You're so welcome! 😊", "Anytime! That's what friends are for 💙", "Of course! Happy to help! 🌟", "No problem at all! 😄"])
+                        elif any(w in m for w in ["sorry", "my bad", "apolog", "forgive"]):
+                            auto_reply = random.choice(["No worries at all! 😊", "It's totally fine, don't worry about it! 💙", "All good! We're cool 😄"])
+                        elif any(w in m for w in ["sad", "upset", "depressed", "unhappy", "crying", "cry", "miss"]):
+                            auto_reply = random.choice(["Aww, I'm sorry to hear that 💙 I'm here for you!", "That's tough. You're stronger than you think! 💪", "Sending you a big hug! 🤗 Things will get better!"])
+                        elif any(w in m for w in ["happy", "great", "awesome", "amazing", "wonderful", "excited", "fantastic"]):
+                            auto_reply = random.choice(["That's amazing!! I'm so happy for you! 🎉", "Yay!! That's so great to hear! 😄🌟", "Love that energy!! Keep it up! 💪✨"])
+                        elif any(w in m for w in ["help", "advice", "what should", "what do you think", "opinion"]):
+                            auto_reply = random.choice(["I'd love to help! Tell me more about it 😊", "Of course! What's going on? I'm all ears 💙", "Sure thing! Give me the details and we'll figure it out together 🌟"])
+                        elif any(w in m for w in ["work", "job", "office", "boss", "meeting", "deadline"]):
+                            auto_reply = random.choice(["Work stuff can be tough sometimes! Hope it's going okay 😊", "Hang in there! You've totally got this 💪", "Ugh, work stress is real! Take it one step at a time 💙"])
+                        elif any(w in m for w in ["food", "eat", "hungry", "lunch", "dinner", "breakfast", "cook"]):
+                            auto_reply = random.choice(["Ooh, food talk! 😄 What are you having?", "Yum! That sounds delicious 🍕 I love food chats!", "Oh nooo now I'm hungry too 😂 What's the plan?"])
+                        elif any(w in m for w in ["sleep", "tired", "exhausted", "sleepy", "nap", "rest"]):
+                            auto_reply = random.choice(["Get some rest! You deserve it 😴💙", "Take care of yourself! Sleep is so important 🌙", "Aww, hope you feel refreshed soon! 💤"])
+                        elif any(w in m for w in ["love", "like", "crush", "relationship", "date", "boyfriend", "girlfriend"]):
+                            auto_reply = random.choice(["Ooh tell me more! 👀😄", "That's so sweet! 💕 How are things going?", "Aww! 😊 That sounds really nice!"])
+                        elif any(w in m for w in ["funny", "lol", "haha", "lmao", "hilarious", "joke"]):
+                            auto_reply = random.choice(["Haha I love that! 😂", "LOL!! You're so funny 😄", "Hahaha that made my day! 😂💙"])
+                        elif any(w in m for w in ["hot", "heat", "garam", "garmi", "sweating", "sweat", "humid", "weather", "karachi", "temperature", "ac", "fan", "load shedding", "loadshedding"]):
+                            auto_reply = random.choice([
+                                "Bro this Karachi heat is NO JOKE 🥵 I'm literally melting!",
+                                "Don't even get me started on this weather 😩 It's like living inside an oven!",
+                                "Karachi in May is just... suffering 😭🔥 Stay hydrated please!",
+                                "The heat + load shedding combo is absolutely brutal 😤 How are you surviving?",
+                                "I swear the AC is running 24/7 and it's still not enough 😂🥵",
+                                "This heat is unreal yaar 🔥 40+ degrees and no mercy!",
+                                "Karachi weather right now: step outside for 2 minutes, become a puddle 😭",
+                                "Bro same!! I haven't gone outside without sweating through my clothes 😩🌡️",
+                                "The humidity makes it 10x worse 😤 At least give us a breeze Karachi!",
+                                "Real talk, this is the hottest it has felt in years 🥵 Stay inside if you can!",
+                            ])
+                        elif "?" in content:
+                            auto_reply = random.choice(["Hmm, that's a really good question! 🤔", "Ooh interesting! Let me think about that 😄", "Great question! What do you think? 😊", "I'm not sure but I'd love to figure it out with you! 💙"])
+                        elif any(w in m for w in ["ok", "okay", "alright", "sure", "fine", "got it", "i see"]):
+                            auto_reply = random.choice(["Sounds good! 😊", "Perfect! 👍", "Great! Let me know if you need anything 💙", "Cool cool! 😄"])
+                        else:
+                            auto_reply = random.choice([
+                                "That's really interesting! Tell me more 😊",
+                                "I totally get what you mean! 💙",
+                                "Oh wow, really? That's so cool! 😄",
+                                "You always have the best things to say! 🌟",
+                                "Haha yeah I feel you! 😄",
+                                "Aww I'm always here for you! 💙",
+                                "That's so true! Couldn't agree more 😊",
+                                "No way!! That's wild 😂",
+                                "Ugh I know right! 😄",
+                                "You're the best, you know that? 🌟",
+                            ])
+
                         auto_id = str(uuid.uuid4())
                         auto_now = datetime.utcnow().isoformat()
                         db.execute(
