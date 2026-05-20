@@ -1,5 +1,5 @@
-export const API_BASE = "https://nexchat-production-4082.up.railway.app";
-export const WS_BASE = "wss://nexchat-production-4082.up.railway.app";
+export const API_BASE = "https://sanashakeel0821-nexchat-backend.hf.space";
+export const WS_BASE = "wss://sanashakeel0821-nexchat-backend.hf.space";
 
 export interface User {
   id: string;
