@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional
-import sqlite3, hashlib, jwt, uuid, os, shutil, json
+import sqlite3, hashlib, jwt, uuid, os, shutil, json, asyncio, random
 from datetime import datetime, timedelta
 
 SECRET_KEY = "your-secret-key-change-in-production"
@@ -209,6 +209,57 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 # Send to receiver and back to sender (for confirmation)
                 await manager.send_to(receiver_id, msg_payload)
                 await manager.send_to(user_id, msg_payload)
+
+                # Auto-reply if receiver is NOT online
+                if receiver_id not in manager.active:
+                    await asyncio.sleep(1)
+                    replies = [
+                        "Hi! 👋 How are you?",
+                        "Hey there! What's up?",
+                        "Hello! Nice to hear from you 😊",
+                        "Hi! I'll get back to you soon!",
+                        "Hey! Thanks for the message 👍",
+                        "Oh hi! Good to see you here!",
+                        "Hello! How can I help you?",
+                        "Hey, what's going on? 😄",
+                    ]
+                    # pick a reply based on what was sent
+                    msg_lower = content.lower()
+                    if any(w in msg_lower for w in ["hi", "hello", "hey", "sup"]):
+                        auto_reply = random.choice(["Hey! 👋", "Hi there! 😊", "Hello! How are you?", "Hey, what's up?"])
+                    elif any(w in msg_lower for w in ["how are you", "how r u", "how are u"]):
+                        auto_reply = random.choice(["I'm doing great, thanks! 😄", "Pretty good! How about you?", "All good here! 👍"])
+                    elif any(w in msg_lower for w in ["bye", "goodbye", "cya", "see you"]):
+                        auto_reply = random.choice(["Bye! 👋 Take care!", "See you later! 😊", "Goodbye! Have a great day!"])
+                    elif any(w in msg_lower for w in ["thanks", "thank you", "thx"]):
+                        auto_reply = random.choice(["You're welcome! 😊", "No problem at all!", "Happy to help! 👍"])
+                    elif "?" in content:
+                        auto_reply = random.choice(["Good question! Let me think... 🤔", "Hmm, not sure about that!", "That's interesting! 😄"])
+                    else:
+                        auto_reply = random.choice(replies)
+
+                    # get receiver info
+                    rec = db.execute("SELECT id, username FROM users WHERE id=?", (receiver_id,)).fetchone()
+                    if rec:
+                        auto_id = str(uuid.uuid4())
+                        auto_now = datetime.utcnow().isoformat()
+                        db.execute(
+                            "INSERT INTO messages (id, sender_id, receiver_id, content, image_url, type, created_at) VALUES (?,?,?,?,?,?,?)",
+                            (auto_id, receiver_id, user_id, auto_reply, None, "text", auto_now)
+                        )
+                        db.commit()
+                        auto_payload = {
+                            "type": "message",
+                            "id": auto_id,
+                            "sender_id": receiver_id,
+                            "sender_name": rec["username"],
+                            "receiver_id": user_id,
+                            "content": auto_reply,
+                            "image_url": None,
+                            "msg_type": "text",
+                            "created_at": auto_now,
+                        }
+                        await manager.send_to(user_id, auto_payload)
 
     except WebSocketDisconnect:
         manager.disconnect(user_id)
